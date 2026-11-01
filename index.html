@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEVOURER OF GODS — Boss Fight</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="btn-sound" title="Звук вкл/выкл (M)">♪ ЗВУК: ВКЛ</button>
+
+<div id="overlay">
+  <section id="screen-start" class="screen">
+    <div class="panel wide">
+      <h1 id="title">DEVOURER OF GODS</h1>
+
+      <h3>БОСС</h3>
+      <div id="boss-list" class="choices bosses"></div>
+      <div id="boss-desc" class="note"></div>
+
+      <h3>СЛОЖНОСТЬ</h3>
+      <div id="diff-list" class="choices"></div>
+      <div id="diff-desc" class="note"></div>
+
+      <h3>ОРУЖИЕ <small>(в бою можно менять клавишами 1–4)</small></h3>
+      <div id="weapon-list" class="cards"></div>
+
+      <div class="controls">
+        <span><b>A/D W/S</b> полёт</span>
+        <span><b>Shift</b> ускорение</span>
+        <span><b>ЛКМ</b> огонь</span>
+        <span><b>ПКМ</b> Stellar Nova</span>
+        <span><b>Esc</b> пауза</span>
+        <span><b>M</b> звук</span>
+      </div>
+      <button id="btn-start" class="big">НАЧАТЬ БИТВУ</button>
+    </div>
+  </section>
+
+  <section id="screen-pause" class="screen hidden">
+    <div class="panel small">
+      <h2>ПАУЗА</h2>
+      <button id="btn-resume" class="big">ПРОДОЛЖИТЬ</button>
+      <button id="btn-restart" class="ghost">НАЧАТЬ ЗАНОВО</button>
+      <button id="btn-menu-pause" class="ghost">СМЕНИТЬ НАСТРОЙКИ</button>
+    </div>
+  </section>
+
+  <section id="screen-defeat" class="screen hidden">
+    <div class="panel small defeat">
+      <h2>ПОРАЖЕНИЕ</h2>
+      <p class="sub" id="defeat-sub">Бездна поглотила тебя.</p>
+      <div id="defeat-stats" class="stats"></div>
+      <button id="btn-retry" class="big">РЕВАНШ</button>
+      <button id="btn-menu-defeat" class="ghost">СМЕНИТЬ НАСТРОЙКИ</button>
+    </div>
+  </section>
+
+  <section id="screen-victory" class="screen hidden">
+    <div class="panel small victory">
+      <h2>ПОБЕДА</h2>
+      <p class="sub" id="victory-sub">Пожиратель богов повержен.</p>
+      <div id="victory-stats" class="stats"></div>
+      <button id="btn-again" class="big">СЫГРАТЬ СНОВА</button>
+      <button id="btn-menu-victory" class="ghost">СМЕНИТЬ НАСТРОЙКИ</button>
+    </div>
+  </section>
+</div>
+
+<script src="src/config.js"></script>
+<script src="src/physics.js"></script>
+<script src="src/particles.js"></script>
+<script src="src/effects.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/player.js"></script>
+<script src="src/attacks.js"></script>
+<script src="src/boss.js"></script>
+<script src="src/ares_attacks.js"></script>
+<script src="src/ares.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/game.js"></script>
+<script src="src/menu.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
