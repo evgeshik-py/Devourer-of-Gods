@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TERRABATTLE — Boss Fight &amp; Endless</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="btn-sound" title="Звук вкл/выкл (M)">♪ ЗВУК: ВКЛ</button>
+
+<div id="overlay">
+  <section id="screen-start" class="screen">
+    <div class="panel wide">
+      <h1 id="title">TERRABATTLE</h1>
+      <div class="ver">MECH COMBAT SYSTEM <b>v1.1.0</b></div>
+
+      <h3>РЕЖИМ</h3>
+      <div id="mode-list" class="choices"></div>
+      <div id="mode-desc" class="note"></div>
+
+      <div id="boss-section">
+        <h3>БОСС</h3>
+        <div id="boss-list" class="choices bosses"></div>
+        <div id="boss-desc" class="note"></div>
+      </div>
+
+      <h3>СЛОЖНОСТЬ</h3>
+      <div id="diff-list" class="choices"></div>
+      <div id="diff-desc" class="note"></div>
+
+      <h3>ОРУЖИЕ <small>(в бою можно менять клавишами 1–4)</small></h3>
+      <div id="weapon-list" class="cards"></div>
+
+      <div class="actions">
+      <div class="controls">
+        <span><b>A/D W/S</b> полёт</span>
+        <span><b>Shift</b> ускорение</span>
+        <span><b>ЛКМ</b> огонь</span>
+        <span><b>ПКМ</b> Stellar Nova</span>
+        <span><b>Q E R F</b> расходники</span>
+        <span><b>I</b> инвентарь</span>
+        <span><b>Esc</b> пауза</span>
+        <span><b>M</b> звук</span>
+      </div>
+      <div id="loadout-line" class="loadout"></div>
+      <button id="btn-start" class="big">НАЧАТЬ БИТВУ</button>
+      <button id="btn-inventory">АНГАР: ИНВЕНТАРЬ И АКСЕССУАРЫ</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-pause" class="screen hidden">
+    <div class="panel small">
+      <div class="tag">// SYSTEM HOLD</div>
+      <h2>ПАУЗА</h2>
+      <p class="sub">Время боя: <b id="pause-time">00:00.000</b> <small>(на паузе не идёт)</small></p>
+      <button id="btn-resume" class="big">ПРОДОЛЖИТЬ</button>
+      <button id="btn-restart" class="ghost">НАЧАТЬ ЗАНОВО</button>
+      <button id="btn-retire" class="ghost hidden">ЗАВЕРШИТЬ ЗАБЕГ</button>
+      <button id="btn-menu-pause" class="ghost">СМЕНИТЬ НАСТРОЙКИ</button>
+    </div>
+  </section>
+
+  <section id="screen-defeat" class="screen hidden">
+    <div class="panel small defeat">
+      <div class="tag">// PILOT SIGNAL LOST</div>
+      <h2 id="defeat-title">ПОРАЖЕНИЕ</h2>
+      <p class="sub" id="defeat-sub">Бездна поглотила тебя.</p>
+      <div id="defeat-stats" class="stats"></div>
+      <button id="btn-retry" class="big">РЕВАНШ</button>
+      <button id="btn-menu-defeat" class="ghost">СМЕНИТЬ НАСТРОЙКИ</button>
+    </div>
+  </section>
+
+  <section id="screen-victory" class="screen hidden">
+    <div class="panel results" id="results">
+      <div class="tag" id="res-boss">DEVOURER OF GODS</div>
+      <h2 class="mission">MISSION COMPLETE</h2>
+      <div class="res-time"><small>ВРЕМЯ БОЯ</small><b id="res-time">00:00.000</b></div>
+      <div class="rank-wrap">
+        <div class="rank-letter" id="res-rank">S</div>
+        <div class="rank-cap" id="res-label"></div>
+      </div>
+      <p class="sub" id="victory-sub">Пожиратель богов повержен.</p>
+      <div id="victory-stats" class="stats"></div>
+      <button id="btn-again" class="big">СЫГРАТЬ СНОВА</button>
+      <button id="btn-menu-victory" class="ghost">В МЕНЮ</button>
+    </div>
+  </section>
+
+  <section id="screen-inventory" class="screen hidden">
+    <div class="panel wide inv" id="inv-panel">
+      <div class="tag" id="inv-context">// ANGAR</div>
+      <h2>ИНВЕНТАРЬ</h2>
+      <div class="inv-layout">
+        <div class="inv-left">
+          <h3>ЭКИПИРОВКА</h3>
+          <div id="equip-slots" class="equip"></div>
+          <h3>БОНУСЫ</h3>
+          <div id="mods-sum" class="mods"></div>
+        </div>
+        <div class="inv-mid">
+          <h3>РЮКЗАК <small id="inv-count"></small></h3>
+          <div id="inv-grid" class="grid"></div>
+        </div>
+        <div class="inv-right">
+          <h3>ПРЕДМЕТ</h3>
+          <div id="inv-detail" class="detail"></div>
+        </div>
+      </div>
+      <div id="inv-msg" class="inv-msg"></div>
+      <button id="btn-inv-close" class="big">ЗАКРЫТЬ <small>(I / Esc)</small></button>
+    </div>
+  </section>
+</div>
+
+<script src="src/config.js"></script>
+<script src="src/physics.js"></script>
+<script src="src/particles.js"></script>
+<script src="src/effects.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/items.js"></script>
+<script src="src/player.js"></script>
+<script src="src/attacks.js"></script>
+<script src="src/boss.js"></script>
+<script src="src/ares_attacks.js"></script>
+<script src="src/ares.js"></script>
+<script src="src/enemies.js"></script>
+<script src="src/rank.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/game.js"></script>
+<script src="src/inventory_ui.js"></script>
+<script src="src/menu.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
