@@ -6,7 +6,7 @@
 class UI {
   constructor(game) {
     this.game = game;
-    this.s = 1;
+    this.s = 1; this.fx = true; this.compact = false;
     this.reset();
   }
 
@@ -38,7 +38,7 @@ class UI {
     ctx.font = (weight || '700') + ' ' + Math.round(size) + 'px ' + CFG.FONT;
     ctx.textAlign = align || 'left';
     ctx.textBaseline = 'middle';
-    if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = size * 0.6; }
+    if (glow && this.fx) { ctx.shadowColor = glow; ctx.shadowBlur = size * 0.6; }
     ctx.fillStyle = color;
     ctx.fillText(str, x, y);
     ctx.shadowBlur = 0;
@@ -76,7 +76,9 @@ class UI {
 
   /* ---------- главный рендер ---------- */
   render(ctx, w, h) {
-    const g = this.game, s = this.s = clamp(Math.min(w / 1280, h / 720), 0.7, 2.2);
+    const g = this.game, compact = this.compact = !!(g.touch && g.touch.enabled);
+    // на сенсорных экранах масштаб считается от размера в CSS-пикселях, чтобы текст оставался читаемым
+    const s = this.s = compact ? g.dpr * clamp(Math.min(w / g.dpr / 1280, h / g.dpr / 720), 0.64, 1.15) : clamp(Math.min(w / 1280, h / 720), 0.7, 2.2);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
@@ -84,7 +86,7 @@ class UI {
     if (g.boss) this.bossBar(ctx, w, h, s);
     if (g.boss) this.timerHud(ctx, w, h, s);
     this.bossArrow(ctx, w, h, s);
-    this.playerHud(ctx, w, h, s);
+    if (compact) this.playerHudCompact(ctx, w, h, s); else this.playerHud(ctx, w, h, s);
     this.lowHp(ctx, w, h);
     this.bannerDraw(ctx, w, h, s);
     this.hint(ctx, w, h, s);
@@ -269,6 +271,32 @@ class UI {
     this.text(ctx, fmtNum(en ? g.boss.kills : g.stats.damage), rx, h - pad - 20 * s, 26 * s, '#ffffff', 'right', '900', pal.glow);
   }
 
+  /* компактный HUD для сенсорных экранов: корпус и Nova сверху слева, оружие и расходники — кнопки на экране */
+  playerHudCompact(ctx, w, h, s) {
+    const g = this.game, p = g.player, pal = g.boss ? g.boss.pal : CFG.PALETTES[0];
+    const x = 50 * g.dpr, bw = Math.min(200 * s, w * 0.3), bh = 16 * s;
+    let y = 22 * s;
+    const r = clamp(this.playerShown, 0, 1);
+    this.panel(ctx, x - 4 * s, y - 4 * s, bw + 8 * s, bh + 8 * s, 'rgba(53,224,255,0.5)');
+    const gr = ctx.createLinearGradient(x, 0, x + bw, 0);
+    gr.addColorStop(0, r < 0.3 ? '#ff2d55' : '#14b87a'); gr.addColorStop(1, r < 0.3 ? '#ff7a8f' : '#4dff8a');
+    ctx.fillStyle = gr; ctx.fillRect(x, y, bw * r, bh);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(x, y, bw * r, bh * 0.35);
+    if (p.iframes > 0) { ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(x, y, bw, bh); }
+    this.text(ctx, Math.ceil(p.hp) + ' / ' + p.maxHp, x + bw / 2, y + bh / 2 + 1, 11 * s, '#ffffff', 'center', '800');
+    y += bh + 12 * s;
+    const ready = p.charge >= 100, pulse = ready ? 0.6 + 0.4 * Math.sin(g.time * 7) : 0, nh = 12 * s;
+    this.panel(ctx, x - 4 * s, y - 4 * s, bw + 8 * s, nh + 8 * s, ready ? rgba('#9ffcff', 0.6 + 0.4 * pulse) : 'rgba(53,224,255,0.5)');
+    ctx.fillStyle = ready ? rgba('#9ffcff', 0.75 + 0.25 * pulse) : '#1a8fb0';
+    ctx.fillRect(x, y, bw * clamp(p.charge / 100, 0, 1), nh);
+    this.text(ctx, ready ? 'NOVA ГОТОВА' : 'NOVA ' + Math.floor(p.charge) + '%', x + bw / 2, y + nh / 2 + 1, 9.5 * s, '#ffffff', 'center', '800');
+    y += nh + 14 * s;
+    this.text(ctx, g.diff.name, x, y, 10 * s, g.diff.color, 'left', '800');
+    const en = g.boss && g.boss.endless;
+    this.text(ctx, (en ? 'УБИТО ' : 'УРОН ') + fmtNum(en ? g.boss.kills : g.stats.damage), x + bw, y, 10 * s, '#ffffff', 'right', '800');
+    // эффекты: оверлей щита/овердрайва отображаются кольцами вокруг корабля, отдельная строка не нужна
+  }
+
   lowHp(ctx, w, h) {
     const p = this.game.player;
     const r = p.hp / p.maxHp;
@@ -305,6 +333,7 @@ class UI {
   hint(ctx, w, h, s) {
     if (this.hintT <= 0) return;
     ctx.globalAlpha = Math.min(1, this.hintT / 1.5) * 0.9;
+    if (this.compact) { this.text(ctx, 'Левая половина — полёт  •  Правая — огонь (двигай палец для прицела)  •  NOVA — спецспособность', w / 2, h - 84 * this.game.dpr, 12 * s, '#b8c8ff', 'center', '700'); ctx.globalAlpha = 1; return; }
     this.text(ctx, 'WASD — полёт  •  Shift — ускорение  •  ЛКМ — огонь  •  ПКМ — Nova  •  1–4 — оружие  •  Q E R F — расходники  •  I — инвентарь', w / 2, h - 150 * s, 14 * s, '#b8c8ff', 'center', '700');
     ctx.globalAlpha = 1;
   }

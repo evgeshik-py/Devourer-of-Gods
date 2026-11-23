@@ -10,7 +10,7 @@ class AudioFX {
     this.last = {};
     this.beam = null;
     this.amb = null;
-    try { this.muted = localStorage.getItem('dog_muted') === '1'; } catch (e) { /* ignore */ }
+    try { this.muted = Store.getItem('dog_muted') === '1'; } catch (e) { /* ignore */ }
   }
 
   init() {
@@ -38,7 +38,7 @@ class AudioFX {
 
   setMuted(m) {
     this.muted = m;
-    try { localStorage.setItem('dog_muted', m ? '1' : '0'); } catch (e) { /* ignore */ }
+    try { Store.setItem('dog_muted', m ? '1' : '0'); } catch (e) { /* ignore */ }
     if (this.ctx) this.master.gain.setTargetAtTime(m ? 0 : 0.55, this.ctx.currentTime, 0.02);
   }
 

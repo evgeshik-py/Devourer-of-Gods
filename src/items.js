@@ -85,7 +85,7 @@ function sumMods(ids) {
 
 /* ============================================================
    Инвентарь: рюкзак (SIZE ячеек, расходники стакаются) + 3 слота аксессуаров.
-   Хранится в localStorage; изменения сохраняются сразу.
+   Хранится через Store (localStorage + данные игрока Яндекс Игр); изменения сохраняются сразу.
    ============================================================ */
 class Inventory {
   constructor() {
@@ -170,12 +170,12 @@ class Inventory {
   /* ---------- сохранение ---------- */
   save() {
     try {
-      localStorage.setItem('terrabattle_save', JSON.stringify({ v: 1, slots: this.slots, equip: this.equip, best: this.best }));
+      Store.setItem('terrabattle_save', JSON.stringify({ v: 1, slots: this.slots, equip: this.equip, best: this.best }));
     } catch (e) { /* хранилище недоступно — играем без сохранения */ }
   }
   load() {
     try {
-      const raw = JSON.parse(localStorage.getItem('terrabattle_save') || 'null');
+      const raw = JSON.parse(Store.getItem('terrabattle_save') || 'null');
       if (!raw || raw.v !== 1 || !Array.isArray(raw.slots) || !Array.isArray(raw.equip)) return false;
       for (let i = 0; i < this.size; i++) {
         const s = raw.slots[i];

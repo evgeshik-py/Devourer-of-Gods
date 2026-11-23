@@ -2,12 +2,16 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
 <title>TERRABATTLE — Boss Fight &amp; Endless</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="boot">ЗАГРУЗКА…</div>
 
 <button id="btn-sound" title="Звук вкл/выкл (M)">♪ ЗВУК: ВКЛ</button>
 
@@ -31,11 +35,11 @@
       <div id="diff-list" class="choices"></div>
       <div id="diff-desc" class="note"></div>
 
-      <h3>ОРУЖИЕ <small>(в бою можно менять клавишами 1–4)</small></h3>
+      <h3>ОРУЖИЕ <small id="wpn-hint">(в бою можно менять клавишами 1–4)</small></h3>
       <div id="weapon-list" class="cards"></div>
 
       <div class="actions">
-      <div class="controls">
+      <div class="controls" id="controls">
         <span><b>A/D W/S</b> полёт</span>
         <span><b>Shift</b> ускорение</span>
         <span><b>ЛКМ</b> огонь</span>
@@ -48,6 +52,8 @@
       <div id="loadout-line" class="loadout"></div>
       <button id="btn-start" class="big">НАЧАТЬ БИТВУ</button>
       <button id="btn-inventory">АНГАР: ИНВЕНТАРЬ И АКСЕССУАРЫ</button>
+      <button id="btn-bonus" class="ghost hidden">▶ РЕКЛАМА → БОНУС: НАБОР РАСХОДНИКОВ</button>
+      <div id="bonus-msg" class="bonus-msg"></div>
       </div>
     </div>
   </section>
@@ -71,6 +77,7 @@
       <p class="sub" id="defeat-sub">Бездна поглотила тебя.</p>
       <div id="defeat-stats" class="stats"></div>
       <button id="btn-retry" class="big">РЕВАНШ</button>
+      <button id="btn-bonus-d" class="ghost hidden">▶ РЕКЛАМА → БОНУС: ЕЩЁ ТАКИЕ ЖЕ ТРОФЕИ</button>
       <button id="btn-menu-defeat" class="ghost">СМЕНИТЬ НАСТРОЙКИ</button>
     </div>
   </section>
@@ -87,6 +94,7 @@
       <p class="sub" id="victory-sub">Пожиратель богов повержен.</p>
       <div id="victory-stats" class="stats"></div>
       <button id="btn-again" class="big">СЫГРАТЬ СНОВА</button>
+      <button id="btn-bonus-v" class="ghost hidden">▶ РЕКЛАМА → БОНУС: ЕЩЁ ТАКИЕ ЖЕ ТРОФЕИ</button>
       <button id="btn-menu-victory" class="ghost">В МЕНЮ</button>
     </div>
   </section>
@@ -117,7 +125,11 @@
   </section>
 </div>
 
+<div id="ad-veil" class="hidden"><span>РЕКЛАМА</span></div>
+<div id="rotate"><div><b>↻</b>Поверните устройство горизонтально</div></div>
+
 <script src="src/config.js"></script>
+<script src="src/platform.js"></script>
 <script src="src/physics.js"></script>
 <script src="src/particles.js"></script>
 <script src="src/effects.js"></script>
@@ -130,6 +142,7 @@
 <script src="src/ares.js"></script>
 <script src="src/enemies.js"></script>
 <script src="src/rank.js"></script>
+<script src="src/touch.js"></script>
 <script src="src/ui.js"></script>
 <script src="src/game.js"></script>
 <script src="src/inventory_ui.js"></script>

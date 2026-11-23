@@ -34,10 +34,25 @@ class Game {
     for (const n of ['start', 'pause', 'defeat', 'victory', 'inventory']) this.els[n] = document.getElementById('screen-' + n);
     this.soundBtn = document.getElementById('btn-sound');
     this.refreshSoundBtn();
+    // качество графики: 0 — высокое, 1 — среднее, 2 — низкое (понижается автоматически при просадках FPS)
+    this.q = 0; this.slowT = 0; this.dpr = 1; this.dprCap = 1.5;
+    this.touch = new Touch(this);
+    if (this.touch.enabled) this.q = 1;
+    this.applyQuality();
     this.resize();
-    window.addEventListener('resize', () => this.resize());
-    window.addEventListener('blur', () => { if (this.state === 'playing') this.pause(); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden && this.state === 'playing') this.pause(); });
+    // resize/orientationchange: схлопываем в один пересчёт за кадр
+    this.resizePending = false;
+    const rs = () => { if (!this.resizePending) { this.resizePending = true; requestAnimationFrame(() => { this.resizePending = false; this.resize(); }); } };
+    window.addEventListener('resize', rs);
+    window.addEventListener('orientationchange', rs);
+    // потеря фокуса / сворачивание: пауза боя и остановка звука
+    window.addEventListener('blur', () => { if (this.state === 'playing') this.pause(); this.audio.suspend(); });
+    window.addEventListener('focus', () => { if (this.state !== 'paused' && !Platform.adActive && !Platform.sdkPaused) this.audio.resume(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (this.state === 'playing') this.pause(); this.audio.suspend(); Platform.flush(); }
+      else if (this.state !== 'paused' && !Platform.adActive && !Platform.sdkPaused) this.audio.resume();
+    });
+    window.addEventListener('pagehide', () => Platform.flush());
     this.showScreen('start');
     requestAnimationFrame((t) => this.tick(t));
   }
@@ -49,14 +64,14 @@ class Game {
     let s = { mode: 'boss', boss: 'dog', diff: 'normal', weapon: 'pulse' };
     try {
       // terrabattle_sel; старый ключ dog_sel читаем один раз для переноса настроек
-      const raw = JSON.parse(localStorage.getItem('terrabattle_sel') || localStorage.getItem('dog_sel') || 'null');
+      const raw = JSON.parse(Store.getItem('terrabattle_sel') || Store.getItem('dog_sel') || 'null');
       if (raw && CFG.DIFFS.some(d => d.id === raw.diff) && CFG.WEAPONS.some(w => w.id === raw.weapon)) {
         s = { mode: raw.mode === 'endless' ? 'endless' : 'boss', boss: CFG.BOSSES.some(b => b.id === raw.boss) ? raw.boss : 'dog', diff: raw.diff, weapon: raw.weapon };
       }
     } catch (e) { /* ignore */ }
     return s;
   }
-  saveSelection() { try { localStorage.setItem('terrabattle_sel', JSON.stringify(this.sel)); } catch (e) { /* ignore */ } }
+  saveSelection() { try { Store.setItem('terrabattle_sel', JSON.stringify(this.sel)); } catch (e) { /* ignore */ } }
   diffById(id) { return CFG.DIFFS.find(d => d.id === id) || CFG.DIFFS[1]; }
   weaponIndex(id) { const i = CFG.WEAPONS.findIndex(w => w.id === id); return i < 0 ? 0 : i; }
 
@@ -94,13 +109,27 @@ class Game {
   refreshSoundBtn() { this.soundBtn.textContent = this.audio.muted ? '♪ ЗВУК: ВЫКЛ' : '♪ ЗВУК: ВКЛ'; }
   toggleSound() { this.audio.init(); this.audio.setMuted(!this.audio.muted); this.refreshSoundBtn(); }
 
+  /* уровни качества: плотность частиц, шкала рендера, свечение текста HUD */
+  applyQuality() {
+    this.dprCap = [1.5, 1.0, 0.8][this.q];
+    this.densityCap = [1, 0.7, 0.45][this.q];
+    this.ui.fx = this.q < 2;
+    this.particles.density = Math.min(this.particles.density, this.densityCap);
+  }
+  degradeQuality() {
+    if (this.q >= 2) return;
+    this.q++; this.applyQuality(); this.resize();
+  }
+
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const dpr = this.dpr = Math.min(window.devicePixelRatio || 1, this.dprCap);
     const w = Math.max(320, Math.floor(window.innerWidth * dpr)), h = Math.max(240, Math.floor(window.innerHeight * dpr));
-    this.canvas.width = w; this.canvas.height = h;
+    if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; }
     this.w = w; this.h = h;
     this.camera.resize(w, h);
     this.camera.clampToArena();
+    // портрет на сенсорном устройстве: бой ставится на паузу (подсказка «поверни устройство» — в CSS)
+    if (this.touch && this.touch.enabled && window.innerHeight > window.innerWidth && this.state === 'playing') this.pause();
   }
 
   /* ---------- управление состоянием ---------- */
@@ -200,6 +229,8 @@ class Game {
   }
 
   finishRun() {
+    Platform.sessionsSinceAd++;
+    Platform.flush();
     const s = this.stats, acc = s.shots ? Math.round(s.hits / s.shots * 100) : 0;
     this.input.releaseAll();
     this.audio.beamLoop(false);
@@ -235,7 +266,35 @@ class Game {
         row('У босса осталось', left + '%') + row('Время боя', fmtTimeMs(this.timer.elapsedMs())) + row('Нанесено урона', fmtNum(s.damage));
       this.state = 'defeat'; this.showScreen('defeat');
     }
+    // бонус «ещё такие же трофеи» за рекламу: только если реклама доступна и трофеи были
+    const bl = this.pendingEnd === 'victory' ? this.lootResult : (endless ? (this.stats.loot || []) : []);
+    this.bonusLoot = bl && bl.length ? bl.map(d => ({ id: d.id, n: d.n })) : null;
+    const showBonus = Platform.hasSdk && !!this.bonusLoot;
+    for (const id of ['btn-bonus-v', 'btn-bonus-d']) {
+      const b = document.getElementById(id);
+      b.classList.toggle('hidden', !showBonus); b.disabled = false;
+    }
     this.pendingEnd = null;
+  }
+
+  /* бонус за просмотр рекламы: выдать ещё один комплект тех же трофеев */
+  grantBonusLoot() {
+    if (!this.bonusLoot) return;
+    for (const d of this.bonusLoot) this.inventory.add(d.id, d.n);
+    this.inventory.save();
+    for (const id of ['btn-bonus-v', 'btn-bonus-d']) { const b = document.getElementById(id); b.classList.add('hidden'); }
+    const row = document.querySelector('#screen-' + this.state + ' .loot-row');
+    if (row) row.innerHTML += ' <span class="loot" style="--c:#ffe27a">+ БОНУС ×2</span>';
+    this.bonusLoot = null;
+  }
+
+  /* бонус из ангара: набор расходников */
+  grantBonusKit() {
+    const inv = this.inventory;
+    inv.add('repair', 2); inv.add('energy', 1); inv.add('shield', 1); inv.add('overdrive', 1);
+    inv.save();
+    if (this.menu) this.menu.refreshLoadout();
+    document.getElementById('bonus-msg').textContent = 'Бонус получен: ремонт ×2, энергия ×1, щит ×1, овердрайв ×1';
   }
 
   /* список трофеев в виде цветных меток (одинаковые предметы суммируются) */
@@ -280,9 +339,13 @@ class Game {
     if (!(rdt > 0)) rdt = 1 / 60;
     rdt = Math.min(rdt, CFG.MAX_DT);
     this.ft = lerp(this.ft, rdt, 0.05);
-    // адаптивное качество частиц
-    if (this.ft > 0.024) this.particles.density = Math.max(0.4, this.particles.density - 0.01);
-    else if (this.ft < 0.019) this.particles.density = Math.min(1, this.particles.density + 0.004);
+    // адаптивное качество: плотность частиц, затем общее понижение качества при устойчивых просадках
+    if (this.ft > 0.024) this.particles.density = Math.max(0.35, this.particles.density - 0.01);
+    else if (this.ft < 0.019) this.particles.density = Math.min(this.densityCap, this.particles.density + 0.004);
+    if (this.state === 'playing' && this.ft > 0.032) { this.slowT += rdt; if (this.slowT > 3) { this.slowT = 0; this.degradeQuality(); } }
+    else this.slowT = Math.max(0, this.slowT - rdt);
+    Platform.setGameplay(this.state === 'playing');
+    this.touch.sync(rdt);
 
     const inp = this.input;
     if (inp.consume('KeyM')) this.toggleSound();

@@ -10,6 +10,9 @@ class Input {
     this.keys = Object.create(null);
     this.pressed = Object.create(null);
     this.mouse = { x: 0, y: 0, left: false, right: false, rightPressed: false };
+    // сенсорное управление (заполняется из touch.js)
+    this.touchMode = false; this.touchMove = { x: 0, y: 0, on: false };
+    this.touchFire = false; this.touchAimStick = false; this.touchAim = 0; this.touchBoost = false;
     const block = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
     window.addEventListener('keydown', (e) => {
@@ -249,10 +252,14 @@ class Player {
     if (input.down('KeyD', 'ArrowRight')) ix += 1;
     if (input.down('KeyW', 'Space', 'ArrowUp')) iy -= 1;
     if (input.down('KeyS', 'ArrowDown')) iy += 1;
-    const len = Math.hypot(ix, iy);
+    let len = Math.hypot(ix, iy);
     if (len > 0) { ix /= len; iy /= len; }
+    if (len === 0 && input.touchMove.on) {          // сенсорный стик: аналоговое направление
+      const m = Math.hypot(input.touchMove.x, input.touchMove.y);
+      if (m > 0.12) { len = Math.min(1, m * 1.2); ix = input.touchMove.x / m * len; iy = input.touchMove.y / m * len; }
+    }
 
-    const boost = input.down('ShiftLeft', 'ShiftRight') && len > 0;
+    const boost = (input.down('ShiftLeft', 'ShiftRight') || input.touchBoost) && len > 0;
     this.boosting = boost;
     const spM = 1 + this.mods.speed;
     const accel = P.accel * spM * (boost ? P.boostAccel : 1);
@@ -280,8 +287,16 @@ class Player {
     if (this.y > A.h - m) { this.y = A.h - m; if (this.vy > 0) this.vy *= -0.2; }
 
     // прицел
-    const mw = g.camera.screenToWorld(input.mouse.x, input.mouse.y);
-    this.aim = Math.atan2(mw.y - this.y, mw.x - this.x);
+    if (input.touchMode) {
+      if (input.touchFire && input.touchAimStick) this.aim = input.touchAim;       // ручное наведение стиком
+      else {                                                                        // автонаведение на ближайшую часть цели
+        const ns = g.nearestSegment(this.x, this.y);
+        if (ns) this.aim = Math.atan2(ns.y - this.y, ns.x - this.x);
+      }
+    } else {
+      const mw = g.camera.screenToWorld(input.mouse.x, input.mouse.y);
+      this.aim = Math.atan2(mw.y - this.y, mw.x - this.x);
+    }
     this.face = Math.cos(this.aim) >= 0 ? 1 : -1;
 
     // смена оружия: 1-4
@@ -290,7 +305,7 @@ class Player {
     }
 
     // стрельба
-    if (input.mouse.left && this.fireTimer <= 0) this.fire();
+    if ((input.mouse.left || input.touchFire) && this.fireTimer <= 0) this.fire();
 
     // спец. способность
     if (input.consumeRight()) this.useSpecial();

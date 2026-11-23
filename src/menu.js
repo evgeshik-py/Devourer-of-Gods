@@ -116,6 +116,15 @@ class Menu {
     this.diffDesc.style.setProperty('--c', d.color);
   }
 
+  /* подсказки по управлению: клавиатура или сенсор */
+  refreshControls() {
+    const touch = this.game.touch && this.game.touch.enabled;
+    document.getElementById('controls').innerHTML = touch
+      ? '<span><b>Левая половина</b> стик полёта</span><span><b>Правая</b> огонь / прицел</span><span><b>NOVA</b> спецспособность</span><span><b>БУСТ</b> ускорение</span><span><b>Кнопки</b> расходники и оружие</span>'
+      : '<span><b>A/D W/S</b> полёт</span><span><b>Shift</b> ускорение</span><span><b>ЛКМ</b> огонь</span><span><b>ПКМ</b> Stellar Nova</span><span><b>Q E R F</b> расходники</span><span><b>I</b> инвентарь</span><span><b>Esc</b> пауза</span><span><b>M</b> звук</span>';
+    document.getElementById('wpn-hint').textContent = touch ? '(в бою — кнопка на экране)' : '(в бою можно менять клавишами 1–4)';
+  }
+
   /* строка «Экипировка» над кнопкой старта */
   refreshLoadout() {
     const inv = this.game.inventory, ids = inv.equip.filter(Boolean);

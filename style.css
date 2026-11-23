@@ -9,7 +9,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  width: 100%; height: 100%; overflow: hidden;
+  width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none;
+  touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
   background: var(--bg); color: var(--tx);
   font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
   user-select: none; -webkit-user-select: none;
@@ -213,3 +214,92 @@ button.tile.sel { background: color-mix(in srgb, var(--c) 26%, rgba(4, 10, 16, 0
 .actions .controls { margin: 6px 0 4px; }
 .panel.wide h3 { margin: 8px 0 6px; }
 .panel.wide .note { min-height: 30px; }
+
+
+/* ============================================================
+   Публикация (Яндекс Игры): загрузка, реклама, сенсорное управление, мобильные экраны
+   ============================================================ */
+#boot { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--cy); font-family: var(--mono); letter-spacing: 0.4em; font-size: 14px; }
+#ad-veil { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(1, 3, 6, 0.96); color: var(--dim); font-family: var(--mono); letter-spacing: 0.5em; }
+#rotate { display: none; position: fixed; inset: 0; z-index: 70; align-items: center; justify-content: center; text-align: center; background: var(--bg); color: #d8fbff; font-size: 18px; letter-spacing: 0.08em; padding: 24px; }
+#rotate b { display: block; font-size: 64px; color: var(--cy); margin-bottom: 10px; }
+@media (orientation: portrait) { .is-touch #rotate { display: flex; } }
+
+.bonus-msg { min-height: 16px; font-size: 12px; color: var(--gr); font-family: var(--mono); margin-top: 2px; }
+#btn-bonus, #btn-bonus-d, #btn-bonus-v { font-size: 12px; padding: 10px 16px; border-color: rgba(255, 226, 122, 0.6); color: #ffe27a; }
+.panel, .panel.wide, .panel.results { touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* ---------- сенсорные элементы управления (поверх канваса, под экранами меню) ---------- */
+#touch { position: fixed; inset: 0; z-index: 3; touch-action: none; user-select: none; -webkit-user-select: none; }
+#touch .tzone { position: absolute; top: 0; bottom: 0; touch-action: none; }
+#touch .tzone.left { left: 0; width: 50%; }
+#touch .tzone.right { right: 0; width: 50%; }
+#touch .stick { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none;
+  border: 2px solid rgba(53, 224, 255, 0.5); background: rgba(53, 224, 255, 0.08); }
+#touch .stick.aim { border-color: rgba(255, 90, 90, 0.55); background: rgba(255, 90, 90, 0.08); }
+#touch .stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(53, 224, 255, 0.45); }
+#touch .stick.aim i { background: rgba(255, 90, 90, 0.5); }
+#touch .stick.hidden { display: none; }
+#touch button.tb {
+  --c: #35e0ff; --tb: clamp(40px, 13vh, 64px);
+  position: absolute; margin: 0; padding: 0; width: var(--tb); height: var(--tb); border-radius: 50%; clip-path: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; letter-spacing: 0; transform: none; touch-action: none;
+  font-size: calc(var(--tb) * 0.26); font-weight: 800; color: #eafcff; border: 2px solid color-mix(in srgb, var(--c) 70%, transparent);
+  background: rgba(4, 12, 20, 0.62); box-shadow: none; -webkit-user-select: none; user-select: none;
+}
+#touch button.tb:hover { transform: none; box-shadow: none; background: rgba(4, 12, 20, 0.62); }
+#touch button.tb:active { background: color-mix(in srgb, var(--c) 35%, rgba(4, 12, 20, 0.7)); }
+#touch .tb.pause { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + 4px); --tb: clamp(34px, 10vh, 48px); margin-top: clamp(30px, 11vh, 52px); }
+#touch .tb.inv { right: max(8px, env(safe-area-inset-right)); --tb: clamp(34px, 10vh, 48px); top: calc(max(8px, env(safe-area-inset-top)) + clamp(30px, 11vh, 52px) + clamp(34px, 10vh, 48px) + 10px); font-size: 10px; }
+#touch .tb.wpn { right: calc(max(8px, env(safe-area-inset-right)) + clamp(34px, 10vh, 48px) + 8px); --tb: clamp(34px, 10vh, 48px); top: calc(max(8px, env(safe-area-inset-top)) + 4px + clamp(30px, 11vh, 52px)); font-size: 9px; border-radius: 12px; width: clamp(54px, 16vh, 78px); }
+#touch .tb.nova { right: max(16px, env(safe-area-inset-right)); bottom: 38%; --tb: clamp(54px, 18vh, 84px); --ch: 0%; border-color: #35e0ff;
+  background: conic-gradient(rgba(53, 224, 255, 0.7) var(--ch), rgba(4, 12, 20, 0.62) 0); }
+#touch .tb.nova.ready { background: rgba(53, 224, 255, 0.55); box-shadow: 0 0 18px #35e0ff; }
+#touch .tb.boost { left: max(16px, env(safe-area-inset-left)); bottom: 38%; --c: #ffb040; font-size: 11px; }
+#touch .tb.boost.on { background: rgba(255, 176, 64, 0.5); box-shadow: 0 0 14px #ffb040; }
+#touch .tb.cons { bottom: max(8px, env(safe-area-inset-bottom)); --tb: clamp(38px, 12vh, 54px); }
+#touch .tb.cons u { text-decoration: none; font-size: calc(var(--tb) * 0.42); line-height: 1; color: var(--c); }
+#touch .tb.cons em { font-style: normal; font-family: var(--mono); font-size: 11px; line-height: 1.1; }
+#touch .tb.cons.empty { opacity: 0.35; }
+#touch .tb.cons:nth-of-type(n) { left: 50%; }
+#touch .tb.cons:nth-of-type(6) { margin-left: calc(var(--tb) * -2.15); }
+#touch .tb.cons:nth-of-type(7) { margin-left: calc(var(--tb) * -1.05); }
+#touch .tb.cons:nth-of-type(8) { margin-left: calc(var(--tb) * 0.05); }
+#touch .tb.cons:nth-of-type(9) { margin-left: calc(var(--tb) * 1.15); }
+
+/* кнопка звука на сенсорных экранах — компактная иконка */
+.is-touch #btn-sound { font-size: 0; padding: 0; width: 34px; height: 34px; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); border-radius: 50%; clip-path: none; }
+.is-touch #btn-sound::before { content: "♪"; font-size: 16px; }
+
+/* ---------- компактные экраны (телефон в ландшафте) ---------- */
+@media (max-height: 560px) {
+  .screen { align-items: flex-start; }
+  .panel { padding: 14px 18px 16px; }
+  .panel.wide, .panel.results, .panel.small { max-height: 100vh; overflow-y: auto; margin: auto; }
+  .panel.wide { width: min(980px, 98vw); padding: 12px 16px 12px; }
+  .panel.wide h1 { font-size: 24px; }
+  .ver { margin: 2px 0; }
+  h2 { font-size: 24px; margin-bottom: 2px; }
+  h3 { margin: 6px 0 4px; }
+  .sub { margin: 6px 0 10px; font-size: 13px; }
+  button.big { font-size: 15px; padding: 11px 26px; }
+  button { padding: 9px 16px; }
+  button.choice { min-width: 110px; padding: 8px 12px; font-size: 13px; }
+  button.choice.boss { min-width: 200px; }
+  .note { min-height: 0 !important; font-size: 12.5px; }
+  .cards { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  button.card { padding: 8px; } button.card p { display: none; }
+  .actions { bottom: -12px; margin: 4px -16px -12px; padding: 8px 16px 12px; background: rgba(3, 7, 12, 0.98); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
+  .actions button, .actions .bonus-msg { margin: 0; }
+  .panel.wide .controls, .loadout { display: none; }
+  .bonus-msg { width: 100%; min-height: 0; }
+  .rank-letter { font-size: 84px; }
+  .stats { margin: 4px 0 10px; font-size: 13px; gap: 2px; }
+  .panel.inv { width: 98vw; }
+  .inv-layout { grid-template-columns: 170px 1fr 200px; gap: 10px; }
+  .detail { min-height: 0; }
+  button.tile { min-height: 36px; }
+  .grid { grid-template-columns: repeat(6, 1fr); }
+}
+@media (max-height: 560px) and (max-width: 640px) { .inv-layout { grid-template-columns: 1fr; } }
+@media (max-height: 560px) { #btn-inv-close { position: sticky; bottom: 0; z-index: 3; } }
